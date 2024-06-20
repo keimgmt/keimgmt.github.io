@@ -12,7 +12,7 @@ I am a Strategic Account Executive with over a decade of experience in sales and
 
 If you have any questions or would like to get in touch, feel free to contact me:
 
-- **Email**: akwilder@crimson.ua.edu
+- **Email**: admin@kmgmtgroup.com
 - **LinkedIn**: [Kei Wilder](https://www.linkedin.com/in/keihw)
 
 ## License

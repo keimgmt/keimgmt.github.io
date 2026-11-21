@@ -1,0 +1,507 @@
+<title>ES350 Parking Brake Build</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: same shop-manual column as the rotor guide. Parts board, animated stage, then job cards with hack callouts */
+:root{
+  --bg:#eef2f5; --card:#ffffff; --ink:#18222e; --muted:#566373; --line:#d4dce4;
+  --accent:#0b6f8a; --accent-ink:#ffffff; --warn:#f2c230; --warn-ink:#2b2100; --stop:#c8372d; --hack:#7a4cc2; --hack-ink:#ffffff;
+  --plate:#3a424c; --plate2:#4b5561; --steel:#a9b3bd; --steel2:#d6dde3; --lining:#3b3a38; --web:#8a5a3c; --rotor:#8d969f; --tire:#1d2126;
+  --kitY:#d9c13a; --kitG:#2f8a4a; --kitR:#b8442f; --board:#c9a26d;
+  --display:"Fredoka", "Trebuchet MS", system-ui, sans-serif;
+  --body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#11171d; --card:#1a222b; --ink:#e7edf2; --muted:#9fb0bf; --line:#2c3844;
+  --accent:#3fb3d1; --accent-ink:#06222b; --stop:#ff6b5f; --hack:#b48cf0; --hack-ink:#1a0d33;
+  --plate:#56606b; --plate2:#6a7581; --steel:#b9c3cc; --steel2:#dfe5ea; --lining:#2a2927; --web:#a36d4a; --rotor:#9aa3ac; --tire:#05070a; --board:#8f7350;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#11171d; --card:#1a222b; --ink:#e7edf2; --muted:#9fb0bf; --line:#2c3844;
+  --accent:#3fb3d1; --accent-ink:#06222b; --stop:#ff6b5f; --hack:#b48cf0; --hack-ink:#1a0d33;
+  --plate:#56606b; --plate2:#6a7581; --steel:#b9c3cc; --steel2:#dfe5ea; --lining:#2a2927; --web:#a36d4a; --rotor:#9aa3ac; --tire:#05070a; --board:#8f7350;
+  color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:0 48px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:700}
+h2{font-size:1.65rem;font-weight:600}
+h3{font-size:1.2rem;font-weight:600}
+p{margin:0}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.eyebrow{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;vertical-align:middle}
+.grown{background:var(--warn);color:var(--warn-ink)}
+.hackT{background:var(--hack);color:var(--hack-ink)}
+section{display:grid;gap:16px}
+.note{color:var(--muted);font-size:.95rem;max-width:70ch}
+
+header.hero{padding-top:32px;display:grid;gap:14px}
+.meet{display:flex;gap:14px;align-items:flex-start;max-width:72ch}
+.meet .face{flex:none;width:56px;height:56px}
+.meet p{min-width:0}
+
+.how{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.how .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:8px}
+.missing{border:2px solid var(--stop)!important}
+.missing ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+
+/* parts board */
+.kit{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.kit .p{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center}
+.kit svg{width:64px;height:48px}
+.kit b{display:block;font-size:.98rem}
+.kit span{color:var(--muted);font-size:.88rem}
+.kit .cnt{font-family:var(--mono);color:var(--accent);font-weight:700;font-size:.85rem}
+
+/* player */
+.player{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:grid}
+.stageBox{background:var(--bg);display:flex;justify-content:center;border-bottom:1px solid var(--line)}
+svg.stage{width:100%;max-width:760px;height:auto;display:block}
+.cap{display:grid;gap:8px;padding:16px 18px}
+.cap .num{font-family:var(--mono);color:var(--accent);font-weight:700}
+.cap h3{font-size:1.35rem}
+.cap p{max-width:68ch}
+.cap .hk{color:var(--hack);font-weight:700}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:0 18px 16px}
+.controls button{font:600 .95rem var(--display);border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px 14px;cursor:pointer}
+.controls button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.dots{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+.dots button{width:14px;height:14px;padding:0;border-radius:50%;border:1px solid var(--muted);background:transparent;cursor:pointer}
+.dots button.on{background:var(--accent);border-color:var(--accent)}
+video{width:100%;max-width:100%;border-radius:10px;display:block;background:#000}
+
+/* svg */
+.stage text{font-family:var(--mono);font-weight:700}
+.lbl{fill:var(--ink);font-size:14px}
+.chip rect{fill:var(--warn)} .chip text{fill:var(--warn-ink);font-size:14px}
+.chip.h rect{fill:var(--hack)} .chip.h text{fill:var(--hack-ink)}
+.layer{opacity:0;transition:opacity .4s}
+.layer.on{opacity:1}
+.ov{opacity:0;pointer-events:none}
+.ov.on{opacity:1}
+.enter.fade{animation:fade 1s ease both}
+.enter.slideL{animation:slideL 1.1s cubic-bezier(.2,.8,.3,1) both}
+.enter.slideR{animation:slideR 1.1s cubic-bezier(.2,.8,.3,1) both}
+.enter.drop{animation:drop 1.1s cubic-bezier(.2,.8,.3,1) both;transform-origin:320px 200px}
+.enter.pop{animation:pop .9s cubic-bezier(.2,.8,.3,1.4) both;transform-box:fill-box;transform-origin:center}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes slideL{from{opacity:0;transform:translateX(-140px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translateX(140px)}to{opacity:1;transform:none}}
+@keyframes drop{from{opacity:0;transform:scale(1.35)}to{opacity:1;transform:scale(1)}}
+@keyframes pop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+.ov.on .pulse,.grease.on circle{animation:pulse .8s ease-in-out infinite alternate}
+@keyframes pulse{from{opacity:.35}to{opacity:1}}
+.ov.on .brush{animation:scrub .5s ease-in-out infinite alternate}
+@keyframes scrub{from{transform:translate(-16px,-5px)}to{transform:translate(16px,5px)}}
+.ov.on .demoL{animation:pushL 2.4s ease-in-out infinite}
+.ov.on .demoR{animation:pushR 2.4s ease-in-out infinite}
+.ov.on .demoCable{animation:pull 2.4s ease-in-out infinite}
+.ov.on .demoDrum{animation:glow 2.4s ease-in-out infinite}
+@keyframes pushL{0%,15%,85%,100%{transform:none}40%,60%{transform:translateX(-7px)}}
+@keyframes pushR{0%,15%,85%,100%{transform:none}40%,60%{transform:translateX(7px)}}
+@keyframes pull{0%,15%,85%,100%{transform:none}40%,60%{transform:translate(-10px,10px)}}
+@keyframes glow{0%,20%,80%,100%{stroke:var(--steel)}40%,60%{stroke:var(--stop)}}
+.ov.on .slideIn1{animation:slideIn 1.2s ease .6s both}
+.ov.on .slideIn2{animation:slideIn 1.2s ease 2s both}
+@keyframes slideIn{from{transform:translateX(220px);opacity:0}to{transform:none;opacity:1}}
+.ov.on .squeeze{animation:squeeze 1s ease-in-out 3.4s infinite alternate}
+@keyframes squeeze{from{transform:translateY(0)}to{transform:translateY(10px)}}
+.ov.on .twist{animation:twist 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes twist{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
+.ov.on .jig{animation:jig .35s ease-in-out infinite alternate}
+@keyframes jig{from{transform:translateX(-4px)}to{transform:translateX(4px)}}
+.ov.on .press{animation:press 1s ease-in-out infinite;transform-origin:560px 230px}
+@keyframes press{0%,100%{transform:rotate(0)}50%{transform:rotate(18deg)}}
+.ov.on .stretch{animation:stretch 1.4s ease-in-out infinite alternate}
+@keyframes stretch{from{transform:translateX(0)}to{transform:translateX(26px)}}
+.rot.turn{animation:spin2 4s linear infinite;transform-origin:320px 200px}
+@keyframes spin2{to{transform:rotate(360deg)}}
+#cableEnd{transition:transform 1.4s cubic-bezier(.3,.7,.3,1)}
+
+/* job cards */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:s}
+.steps li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px}
+.steps li::before{counter-increment:s;content:counter(s);font:700 1.3rem/44px var(--display);width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--accent-ink);text-align:center}
+.steps .body{display:grid;gap:8px;min-width:0}
+.steps .like{color:var(--muted);font-style:italic}
+.hack{border-left:4px solid var(--hack);padding:6px 0 6px 12px;display:grid;gap:2px}
+.hack b{color:var(--hack);font-family:var(--mono);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+.hacks{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.hacks div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:4px}
+.hacks h3{font-size:1.05rem;color:var(--hack)}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.links a{display:grid;gap:4px;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.links a:hover{border-color:var(--accent)}
+.links b{color:var(--accent)}
+.links span{color:var(--muted);font-size:.93rem}
+.links .kind{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+body.rec{padding:0;overflow:hidden}
+body.rec .wrap>*:not(#walk){display:none}
+body.rec .wrap{max-width:none;gap:0}
+body.rec #walk>h2,body.rec #walk>.note,body.rec .controls,body.rec #videoBlock{display:none}
+body.rec .player{border:0;border-radius:0;grid-template-columns:780px 1fr;height:720px}
+body.rec .stageBox{align-items:center;border:0}
+body.rec svg.stage{max-width:780px}
+body.rec .cap{align-content:center;padding:40px 44px;gap:18px}
+body.rec .cap h3{font-size:2.1rem}
+body.rec .cap p{font-size:1.25rem}
+
+@media (max-width:760px){ .how{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important} }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">2009 Lexus ES350 · driver side · rear parking brake</div>
+  <h1>Building the Parking Brake From Scratch</h1>
+  <div class="meet">
+    <svg class="face" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="27" fill="var(--accent)"/><circle cx="28" cy="25" r="13" fill="var(--steel2)"/><path d="M12 18c4-12 28-12 32 0c-6-4-26-4-32 0z" fill="var(--ink)"/><circle cx="23" cy="25" r="1.8" fill="var(--ink)"/><circle cx="33" cy="25" r="1.8" fill="var(--ink)"/><path d="M23 31q5 4 10 0" stroke="var(--ink)" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="14" y="40" width="28" height="14" rx="6" fill="var(--warn)"/></svg>
+    <p>Maya is back. The old parking brake parts got wrecked when the stuck rotor was cut off, so she is building the whole thing new from a bare plate. She has the DFC hardware kit and a box of DFC parking brake shoes. Yellow <span class="tag grown">Grown-up</span> tags need an adult. Purple <span class="tag hackT">Redneck hack</span> tags are shop tricks that make the hard parts easier.</p>
+  </div>
+  <p class="note">Do this after the new hub is bolted in and before the rotor goes on. The rotor guide is here: <a href="https://claude.ai/artifact/Pw8PM76UqpwGi898ST7J37" target="_blank" rel="noopener">Putting the Back Brake Back Together</a>.</p>
+</header>
+
+<section aria-labelledby="howH">
+  <h2 id="howH">How this brake works</h2>
+  <div class="how">
+    <div class="box">
+      <h3>A tiny drum inside the rotor</h3>
+      <p>The middle of the rotor is shaped like a top hat. Inside that hat is a small drum. When you push the parking brake pedal, a cable pulls a lever. The lever pushes two curved shoes out against the inside of the drum, like pushing your hands out against the inside of a bucket so it can't spin.</p>
+      <p>Springs pull the shoes back in when you let go. The star wheel adjuster sets how close the shoes sit to the drum.</p>
+    </div>
+    <div class="box missing">
+      <h3>Not in your kit. Check you have these.</h3>
+      <ul>
+        <li><b>Parking brake shoe lever</b> (the arm the cable hooks to)</li>
+        <li><b>Shoe strut</b> (the flat bar between the shoes)</li>
+        <li><b>Shoe guide plate and its bolt</b> on the anchor</li>
+        <li><b>Cable end and its spring</b>, not frayed</li>
+      </ul>
+      <p class="note">If any got cut or bent, a Lexus or Toyota parts counter can sell them for 2007 to 2012 ES350. The 2007 to 2011 Camry parts match.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="kitH">
+  <h2 id="kitH">Sort the kit</h2>
+  <p class="note">The hardware kit and the 4 shoes are enough for <b>both</b> back wheels. Split everything in half. Half goes on this side. Put the other half back in the bag and write "PASSENGER" on it. Here is one side's share. Kit layouts can vary, so match each piece to the passenger side by size and shape, like a matching game.</p>
+  <div class="kit" id="kit"></div>
+</section>
+
+<section id="walk" aria-labelledby="walkH">
+  <h2 id="walkH">Watch it go together</h2>
+  <p class="note">This drawing is a map, not a photo. Spots for each spring can sit a little different on the real car, so your passenger side is the boss. Press Back and Next to go at your own speed, or Read to me to hear it.</p>
+  <div class="player">
+    <div class="stageBox"><svg class="stage" id="stage" viewBox="0 0 640 400" role="img" aria-label="Animated drawing of the parking brake being built step by step"></svg></div>
+    <div class="cap" aria-live="polite">
+      <span class="num" id="capNum">Step 1 of 14</span>
+      <h3 id="capTitle"></h3>
+      <p id="capText"></p>
+      <p class="hk" id="capHack"></p>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+    <div class="controls">
+      <button id="prev" type="button">Back</button>
+      <button id="play" type="button" class="primary">Pause</button>
+      <button id="next" type="button">Next</button>
+      <button id="speak" type="button" aria-pressed="false">Read to me</button>
+      <div class="dots" id="dots"></div>
+    </div>
+  </div>
+  <div id="videoBlock" style="display:grid;gap:8px">
+    <h3>Same walkthrough as a video</h3>
+    <video controls preload="metadata" src="parking-brake-walkthrough.mp4"></video>
+  </div>
+</section>
+
+<section aria-labelledby="stepsH">
+  <h2 id="stepsH">The steps, written out</h2>
+  <p class="note"><b>Before step 1:</b> pull the passenger side rear wheel, caliper and rotor and take photos and a short video of that parking brake. Then use your phone's photo editor to <b>flip the photo sideways</b>. Now it looks exactly like your driver side.</p>
+  <ol class="steps">
+    <li><div class="body"><h3>Clean and grease the plate</h3>
+      <p>Wire brush the dust shield where the shoes ride. Spray it with brake cleaner. Find the small raised bumps (shoe pads) and put a tiny dab of high-temp brake grease on each one. Also a dab on the anchor where the shoe ends touch.</p>
+      <div class="hack"><b>Redneck hack</b><span>Use a cotton swab for the grease. You get a dab the size of a pea every time, and your fingers stay clean for the shoes.</span></div></div></li>
+    <li><div class="body"><h3>Put the lever on the shoe <span class="tag grown">Grown-up</span></h3>
+      <p>The lever goes on the shoe closest to where the cable comes through the plate. Push the lever's pin through the shoe hole. Slide the shim washer on, then the U-shaped C-washer. Squeeze the C-washer closed with pliers. The lever should swing freely but not wobble.</p>
+      <div class="hack"><b>Redneck hack</b><span>Clamp the shoe flat in a vise with rags on the jaws, or set it on a phone book. Then crimp the C-washer with Channellocks or vise grips.</span></div></div></li>
+    <li><div class="body"><h3>Hook the cable to the lever</h3>
+      <p>Make sure the parking brake pedal is all the way up (off). Pull back the little spring on the cable end and hook the cable into the slot at the bottom of the lever.</p>
+      <div class="hack"><b>Redneck hack</b><span>Squeeze the cable spring back with needle-nose pliers, or slide a 10 mm open-end wrench over the cable to push the spring back while you hook it. If there's no slack, a grown-up loosens the cable adjuster under the car a few turns.</span></div></div></li>
+    <li><div class="body"><h3>Set the first shoe and lock it down</h3>
+      <p>Set the lever shoe on the plate. Push the hold-down pin through the back of the plate and through the shoe. On the front, stack it like a sandwich: cup, spring, cup. Push the top cup down and turn it a quarter turn so the flat pin end locks in the slot.</p>
+      <p class="like">It works like a childproof medicine cap. Push and twist.</p>
+      <div class="hack"><b>Redneck hack</b><span>No hold-down tool? Put the cup in a deep socket (one that just fits around it) on an extension and push and twist with that. Put a strip of tape over the pin head on the back side so it can't slide out while you work.</span></div></div></li>
+    <li><div class="body"><h3>Set the second shoe and lock it down</h3>
+      <p>Same thing on the other shoe. The kit has a straight pin and a bent pin for each side. The bent pin is for the hole that is blocked by the hub, so it reaches around. Test which one lines up before you load the spring.</p>
+      <div class="hack"><b>Redneck hack</b><span>Hold the bent pin from behind with locking pliers so it can't spin while you twist the cup on the front.</span></div></div></li>
+    <li><div class="body"><h3>Put in the strut and its spring</h3>
+      <p>The flat strut bar goes between the lever and the other shoe. Its small spring goes on the strut first. When the cable pulls, the lever pushes this bar, and the bar pushes the other shoe out.</p>
+      <div class="hack"><b>Redneck hack</b><span>Squeeze the strut spring and hold it shut with a binder clip, put the strut in place, then pull the clip off.</span></div></div></li>
+    <li><div class="body"><h3>Put in the star wheel adjuster</h3>
+      <p>Screw the star wheel almost all the way in so the adjuster is short. Set its forked ends into the slots on the shoe tips, opposite the anchor. Hook the short green spring across the shoes next to it.</p>
+      <div class="hack"><b>Redneck hack</b><span>Put a dab of anti-seize on the adjuster threads before it goes in. Next time it will still turn, not rust solid.</span></div></div></li>
+    <li><div class="body"><h3>Put the guide plate on the anchor <span class="tag grown">Grown-up</span></h3>
+      <p>Set the guide plate back over the anchor, the way the passenger side has it. The Lexus factory manual says to put thread locker (Toyota 1344 or an equal) on the bolt threads. Tighten it to the factory spec.</p></div></li>
+    <li><div class="body"><h3>Hook on the two return springs</h3>
+      <p>These long springs pull the shoes back to the anchor. Hook one end into the shoe hole, then stretch the other end onto the anchor. This is the hardest step. Wear safety glasses because springs can fly.</p>
+      <div class="hack"><b>Redneck hack</b><span>Loop a zip tie or a strong piece of string through the spring's hook, then pull the string with a screwdriver handle so your fingers stay out of the way. A bent coat hanger hook works too. Vise grips on the spring end give you a big handle.</span></div></div></li>
+    <li><div class="body"><h3>Do the wiggle test</h3>
+      <p>Push each shoe. Both should sit flat on the plate, move together, and spring back. Look at every spring next to your flipped passenger side photo. Count them. Nothing left in the tray except the other side's bag.</p>
+      <div class="hack"><b>Redneck hack</b><span>Pull the parking brake pedal once with the rotor off. You should see both shoes push out and come back. That proves the cable, lever and strut all work.</span></div></div></li>
+    <li><div class="body"><h3>Rotor on and adjust the shoes</h3>
+      <p>Slide the rotor over the shoes. Pull the rubber plug from the hole in the rotor, turn the rotor so you see the star wheel, and click it with a flat screwdriver until the rotor locks. Then back it off about 8 clicks so the rotor spins with just a light brush sound. Plug back in.</p>
+      <div class="hack"><b>Redneck hack</b><span>Put 2 lug nuts on backward (flat side in) to hold the rotor tight against the hub while you adjust. Then the rotor can't wobble and fool you.</span></div></div></li>
+    <li><div class="body"><h3>Test and break in <span class="tag grown">Grown-up</span></h3>
+      <p>After the caliper and wheel are back on, push the parking brake pedal and count the clicks. Compare to your owner's manual. To break in new shoes, Toyota says: drive about 30 mph, hold the pedal release button and press the parking brake lightly, keep going about a quarter mile, then let off. Do it 2 or 3 times in an empty lot.</p></div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="hacksH">
+  <h2 id="hacksH">More shop hacks</h2>
+  <div class="hacks">
+    <div><h3>Cardboard map</h3><p>Lay the passenger side parts on cardboard in the same shape they came off, or trace the shoes and draw where each spring goes. Now you have a puzzle picture to copy.</p></div>
+    <div><h3>Muffin tin sort</h3><p>One cup per kind of part. Egg cartons work too. Nothing rolls away under the car.</p></div>
+    <div><h3>Build half on the bench</h3><p>Some people hook the adjuster and its spring to both shoes on the bench, then open the shoes like a book and set them on the plate together.</p></div>
+    <div><h3>Zip tie helper</h3><p>Zip tie the shoes loosely around the hub to hold them in place while you hook springs. Snip it off before the rotor goes on.</p></div>
+    <div><h3>Magnet on a stick</h3><p>A telescoping magnet finds the cup or pin you dropped in the gravel. Cheap at any parts store.</p></div>
+    <div><h3>Keep the shoes clean</h3><p>Wear fresh gloves to handle shoes. Grease on the lining makes it slip. If it happens, scuff it with sandpaper and spray brake cleaner.</p></div>
+    <div><h3>Paint marker on the star</h3><p>Put a dot on one tooth of the star wheel. Easy to count clicks and turns when you adjust.</p></div>
+    <div><h3>Phone video, not just photos</h3><p>Film the passenger side while you take it apart. Play it backward and you see exactly how it goes back together.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="linksH">
+  <h2 id="linksH">People who built this on similar cars</h2>
+  <p class="note">The 2007 to 2012 ES350, 2007 to 2011 Camry and older ES300/ES330 and Solara all use this same Toyota drum-in-hat parking brake, which is why your kit lists all of them.</p>
+  <div class="links">
+    <a href="https://1aauto.com/how-to-replace-parking-brake-shoes-and-hardware-92-11-toyota-camry/video/46591" target="_blank" rel="noopener"><span class="kind">Video</span><b>Parking brake shoes and hardware</b><span>1A Auto · 1992 to 2011 Camry. Full shoe and spring install.</span></a>
+    <a href="https://www.1aauto.com/how-to-replace-rear-brakes-2007-2011-toyota-camry/video/63119" target="_blank" rel="noopener"><span class="kind">Video</span><b>Rear brakes, 2007 to 2011 Camry</b><span>1A Auto · lists ES350 fitment.</span></a>
+    <a href="https://www.1aauto.com/how-to-adjust-parking-brake-06-11-toyota-camry/video/52353" target="_blank" rel="noopener"><span class="kind">Video</span><b>Adjusting the parking brake</b><span>1A Auto · 2006 to 2011 Camry. Star wheel and cable.</span></a>
+    <a href="https://1aauto.com/how-to-replace-parking-brake-shoes-1999-2003-toyota-solara/video/54885" target="_blank" rel="noopener"><span class="kind">Video</span><b>Parking brake shoes, Solara</b><span>1A Auto · same design, another angle on the springs.</span></a>
+    <a href="https://www.1aauto.com/how-to-replace-parking-brake-shoes-2012-2017-toyota-camry/video/58685" target="_blank" rel="noopener"><span class="kind">Video</span><b>Parking brake shoes, 2012 to 2017 Camry</b><span>1A Auto · newer car, very close layout.</span></a>
+    <a href="https://www.oreillyauto.com/how-to-hub/06-11-Camry-rear-brakes-replacement" target="_blank" rel="noopener"><span class="kind">Guide</span><b>O'Reilly written guide</b><span>2006 to 2011 Camry rear brakes with photos, including cable to lever and strut.</span></a>
+    <a href="https://www.carparts.com/blog/tutorials/toyota/camry/how-to-replace-the-parking-brake-shoes-2011-2017-toyota-camry/" target="_blank" rel="noopener"><span class="kind">Guide</span><b>CarParts.com photo tutorial</b><span>Parking brake shoes step by step on a Camry.</span></a>
+    <a href="https://www.clublexus.com/forums/es-5th-gen-2007-2012/706965-parking-brake-repair.html" target="_blank" rel="noopener"><span class="kind">Forum</span><b>ClubLexus: ES350 parking brake repair</b><span>Thread with Lexus factory manual pages attached.</span></a>
+    <a href="https://www.clublexus.com/forums/attachments/es-5th-gen-2007-2012/295547d1377528357-parking-brake-repair-04.pdf" target="_blank" rel="noopener"><span class="kind">Manual</span><b>ES350 factory reassembly pages</b><span>Lever install and the thread locker spot.</span></a>
+    <a href="https://www.clublexus.com/forums/es-1st-to-4th-gen-1990-2006/737269-diy-parking-brake-service-replacement.html" target="_blank" rel="noopener"><span class="kind">Forum</span><b>ClubLexus DIY: parking brake service</b><span>Owner write-up on the same design, new shoes and hardware for under $15.</span></a>
+    <a href="https://clublexus.com/forums/gs-3rd-gen-2006-2011/902874-freshened-up-my-parking-brake.html" target="_blank" rel="noopener"><span class="kind">Forum</span><b>ClubLexus: freshened up my parking brake</b><span>GS owner rebuild with photos.</span></a>
+    <a href="https://community.cartalk.com/t/has-anyone-attempted-to-replace-the-parking-brake-shoes-on-a-toyota/91319" target="_blank" rel="noopener"><span class="kind">Forum</span><b>Car Talk: Toyota parking brake shoes</b><span>Owners trading tips. Build the spring and cup first, then slide the shoe in.</span></a>
+    <a href="https://forum.ih8mud.com/threads/parking-brake-shoe-replacement-special-tools.1298068/" target="_blank" rel="noopener"><span class="kind">Forum</span><b>ih8mud: special tools?</b><span>Toyota truck owners on doing it without the factory spring tools.</span></a>
+    <a href="https://www.corvetteforum.com/forums/c6-tech-performance/2682302-need-help-with-parking-brake-spring.html" target="_blank" rel="noopener"><span class="kind">Forum</span><b>Zip tie and coat hanger spring tricks</b><span>Corvette owners, same drum-in-hat idea, clever spring hacks.</span></a>
+    <a href="https://www.explorerforum.com/forums/threads/parking-brake-shoe-installation-tips.486071/post-3825293" target="_blank" rel="noopener"><span class="kind">Forum</span><b>Explorer Forum install tips</b><span>Another drum-in-hat car, solved thread.</span></a>
+    <a href="https://www.youtube.com/results?search_query=2007+camry+es350+parking+brake+shoes+install" target="_blank" rel="noopener"><span class="kind">YouTube search</span><b>More videos</b><span>Search for Camry and ES350 parking brake shoe installs.</span></a>
+    <a href="https://www.reddit.com/r/MechanicAdvice/search/?q=toyota%20parking%20brake%20shoes" target="_blank" rel="noopener"><span class="kind">Reddit search</span><b>r/MechanicAdvice</b><span>Search for Toyota parking brake shoe threads.</span></a>
+    <a href="https://www.tiktok.com/search?q=parking%20brake%20shoes%20drum%20in%20hat" target="_blank" rel="noopener"><span class="kind">TikTok search</span><b>Short clips</b><span>Quick spring and hold-down tricks from mechanics.</span></a>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+const NS='http://www.w3.org/2000/svg', C={x:320,y:200};
+function el(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+function pt(r,deg){const a=deg*Math.PI/180;return [C.x+r*Math.cos(a),C.y+r*Math.sin(a)]}
+function arcBand(r1,r2,a1,a2,cx,cy){cx=cx??C.x;cy=cy??C.y;const P=(r,d)=>[cx+r*Math.cos(d*Math.PI/180),cy+r*Math.sin(d*Math.PI/180)];
+  const [x1,y1]=P(r2,a1),[x2,y2]=P(r2,a2),[x3,y3]=P(r1,a2),[x4,y4]=P(r1,a1);const lg=((a2-a1+360)%360)>180?1:0;
+  return `M${x1} ${y1}A${r2} ${r2} 0 ${lg} 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 ${lg} 0 ${x4} ${y4}Z`}
+function zig(x1,y1,x2,y2,n,amp){const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len;let d=`M${x1} ${y1}`;
+  for(let i=1;i<n;i++){const t=i/n,s=(i%2?1:-1)*amp;d+=`L${x1+dx*t+nx*s} ${y1+dy*t+ny*s}`}return d+`L${x2} ${y2}`}
+function chip(svg,x,y,txt,parent,hack){const g=el('g',{class:'chip'+(hack?' h':'')},parent);const w=txt.length*8.8+20;if(x>200)x=626-w;el('rect',{x:x,y:y,width:w,height:26,rx:5},g);el('text',{x:x+10,y:y+18},g).textContent=txt;return g}
+
+/* ---------- part icons (shared by kit board + stage) ---------- */
+const ICON={
+ shoe:(g)=>{el('path',{d:arcBand(26,34,200,340,32,52),fill:'var(--web)'},g);el('path',{d:arcBand(34,40,205,335,32,52),fill:'var(--lining)'},g)},
+ adjuster:(g)=>{el('rect',{x:6,y:20,width:52,height:9,rx:2,fill:'var(--steel2)',stroke:'var(--ink)','stroke-width':1.2},g);for(let i=0;i<10;i++)el('rect',{x:30.5,y:13,width:3,height:23,fill:'var(--steel)',transform:`rotate(${i*18} 32 24.5)`},g);el('path',{d:'M6 18v13M58 18v13',stroke:'var(--ink)','stroke-width':2},g)},
+ green:(g)=>{el('path',{d:zig(10,24,54,24,14,5),fill:'none',stroke:'var(--kitG)','stroke-width':3},g);el('path',{d:'M10 24q-6 0 -6 -6M54 24q6 0 6 -6',fill:'none',stroke:'var(--kitG)','stroke-width':2},g)},
+ hook:(g)=>{el('path',{d:'M8 10v12h6',fill:'none',stroke:'var(--kitY)','stroke-width':2.5},g);el('path',{d:zig(14,24,40,24,10,5),fill:'none',stroke:'var(--kitY)','stroke-width':3},g);el('path',{d:'M40 24h14q4 0 0 4h-8',fill:'none',stroke:'var(--kitY)','stroke-width':2.5},g)},
+ coil:(g)=>{for(let i=0;i<4;i++)el('ellipse',{cx:32,cy:12+i*8,rx:12,ry:4,fill:'none',stroke:'var(--kitY)','stroke-width':2.5},g)},
+ red:(g)=>{el('path',{d:'M16 10h32L18 18h30L18 26h30L18 34h30L16 40',fill:'none',stroke:'var(--kitR)','stroke-width':3,'stroke-linejoin':'round'},g)},
+ cup:(g)=>{el('circle',{cx:22,cy:24,r:11,fill:'var(--steel2)',stroke:'var(--ink)','stroke-width':1.2},g);el('rect',{x:17,y:22,width:10,height:4,rx:2,fill:'var(--ink)'},g);el('circle',{cx:44,cy:24,r:11,fill:'var(--steel)',stroke:'var(--ink)','stroke-width':1.2},g);el('circle',{cx:44,cy:24,r:4,fill:'var(--ink)'},g)},
+ tab:(g)=>{el('circle',{cx:32,cy:28,r:11,fill:'var(--steel)',stroke:'var(--ink)','stroke-width':1.2},g);el('rect',{x:28,y:8,width:8,height:10,rx:2,fill:'var(--steel)',stroke:'var(--ink)','stroke-width':1.2},g);el('circle',{cx:32,cy:28,r:4,fill:'var(--ink)'},g)},
+ pins:(g)=>{el('path',{d:'M18 6v36',stroke:'var(--steel2)','stroke-width':3},g);el('ellipse',{cx:18,cy:6,rx:6,ry:2.5,fill:'var(--steel2)'},g);el('path',{d:'M44 6v10l-6 8 8 6v12',fill:'none',stroke:'var(--steel2)','stroke-width':3},g);el('ellipse',{cx:44,cy:6,rx:6,ry:2.5,fill:'var(--steel2)'},g)},
+ clip:(g)=>{el('path',{d:'M14 38V18a8 8 0 0 1 16 0v20',fill:'none',stroke:'var(--steel2)','stroke-width':4},g);el('circle',{cx:46,cy:26,r:10,fill:'none',stroke:'var(--web)','stroke-width':4},g)}
+};
+const KIT=[
+ ['shoe','Parking brake shoes','2 per side','The curved pieces with the gray lining'],
+ ['adjuster','Star wheel adjuster','1 per side','Sets how close the shoes sit to the drum'],
+ ['green','Short green spring','1 per side','Holds the shoes to the adjuster'],
+ ['hook','Long yellow hook springs','2 per side','Return springs, shoes to anchor'],
+ ['coil','Small yellow coil springs','2 per side','Hold-down springs'],
+ ['red','Red spring','1 per side','Most likely the strut spring. Match it.'],
+ ['cup','Round cups','4 per side','2 per hold-down, a sandwich'],
+ ['tab','Tabbed washers','2 per side','Match to the passenger side'],
+ ['pins','Hold-down pins','1 straight + 1 bent','Bent one reaches around the hub'],
+ ['clip','C-washer and shim','1 each per side','Lock the lever onto the shoe']
+];
+const kit=document.getElementById('kit');
+KIT.forEach(([k,n,c,d])=>{const p=document.createElement('div');p.className='p';const s=el('svg',{viewBox:'0 0 64 48','aria-hidden':'true'});ICON[k](s);p.appendChild(s);
+  const t=document.createElement('div');t.innerHTML='<b>'+n+'</b><span class="cnt">'+c+'</span><br><span>'+d+'</span>';p.appendChild(t);kit.appendChild(p)});
+
+/* ---------- stage ---------- */
+const svg=document.getElementById('stage');
+function layer(id,from,anim){const g=el('g',{id:id,class:'layer'},svg);g.dataset.from=from;g.dataset.anim=anim||'fade';return g}
+function overlay(step){const g=el('g',{class:'ov'},svg);g.dataset.step=step;return g}
+
+// geometry
+const shoeLpath=[arcBand(100,124,104,256),arcBand(124,134,110,250)], shoeRpath=[arcBand(100,124,284,436),arcBand(124,134,290,430)];
+function drawShoe(g,paths){el('path',{d:paths[0],fill:'var(--web)',stroke:'var(--ink)','stroke-width':1.5},g);el('path',{d:paths[1],fill:'var(--lining)'},g)}
+function drawLever(g){el('path',{d:`M${C.x-44} ${C.y-96} L${C.x-78} ${C.y+52}`,stroke:'var(--plate2)','stroke-width':11,'stroke-linecap':'round'},g);
+  el('path',{d:`M${C.x-44} ${C.y-96} L${C.x-78} ${C.y+52}`,stroke:'var(--ink)','stroke-width':1.2,fill:'none'},g);el('circle',{cx:C.x-44,cy:C.y-96,r:4,fill:'var(--steel2)',stroke:'var(--ink)'},g)}
+function drawHold(g,x,y){el('circle',{cx:x,cy:y,r:9,fill:'var(--steel2)',stroke:'var(--ink)','stroke-width':1.5},g);for(let i=0;i<3;i++)el('circle',{cx:x,cy:y,r:9-i*2.5,fill:'none',stroke:'var(--kitY)','stroke-width':1.5},g);el('rect',{x:x-4,y:y-1.5,width:8,height:3,fill:'var(--ink)'},g)}
+function drawStrut(g){el('rect',{x:C.x-40,y:C.y-86,width:92,height:9,rx:2,fill:'var(--steel)',stroke:'var(--ink)','stroke-width':1.2},g);el('path',{d:zig(C.x-20,C.y-72,C.x+30,C.y-72,10,4),fill:'none',stroke:'var(--kitR)','stroke-width':2.5},g)}
+function drawAdj(g){el('rect',{x:C.x-30,y:C.y-117,width:60,height:9,rx:2,fill:'var(--steel2)',stroke:'var(--ink)','stroke-width':1.2},g);
+  const s=el('g',{},g);for(let i=0;i<10;i++)el('rect',{x:-1.5,y:-10,width:3,height:20,fill:'var(--warn)',transform:`translate(${C.x+6} ${C.y-112.5}) rotate(${i*18})`},s);
+  el('path',{d:zig(C.x-34,C.y-98,C.x+34,C.y-98,12,4),fill:'none',stroke:'var(--kitG)','stroke-width':2.5},g)}
+function drawGuide(g){el('rect',{x:C.x-22,y:C.y+100,width:44,height:14,rx:3,fill:'var(--steel2)',stroke:'var(--ink)','stroke-width':1.2},g);el('circle',{cx:C.x,cy:C.y+107,r:4,fill:'var(--plate)'},g)}
+function drawReturns(g){el('path',{d:zig(C.x-66,C.y+86,C.x-14,C.y+104,9,4),fill:'none',stroke:'var(--kitY)','stroke-width':3},g);el('path',{d:zig(C.x+66,C.y+86,C.x+14,C.y+104,9,4),fill:'none',stroke:'var(--kitY)','stroke-width':3},g)}
+function drawBase(g){el('circle',{cx:C.x,cy:C.y,r:150,fill:'var(--plate)'},g);el('circle',{cx:C.x,cy:C.y,r:108,fill:'none',stroke:'var(--plate2)','stroke-width':5},g);
+  el('circle',{cx:C.x,cy:C.y,r:56,fill:'var(--steel)',stroke:'var(--ink)','stroke-width':1.5},g);el('circle',{cx:C.x,cy:C.y,r:20,fill:'var(--steel2)'},g);
+  for(let i=0;i<5;i++){const [x,y]=pt(38,-90+i*72);el('circle',{cx:x,cy:y,r:5,fill:'var(--steel2)',stroke:'var(--ink)'},g)}
+  el('rect',{x:C.x-14,y:C.y+98,width:28,height:22,rx:3,fill:'var(--tire)'},g)}
+
+// base always
+drawBase(el('g',{},svg));
+// cable (always) - end hangs loose until step 5
+const cable=el('g',{id:'cableG'},svg);
+el('path',{d:`M40 400 C 120 380, 200 330, ${C.x-78} ${C.y+52}`,fill:'none',stroke:'var(--tire)','stroke-width':5,id:'cablePath'},cable);
+
+const grease=layer('grease',3,'fade');grease.classList.add('grease');
+[[118,155],[118,205],[118,335],[118,25],[96,90],[96,270]].forEach(([r,a])=>{const [x,y]=pt(r,a);el('circle',{cx:x,cy:y,r:6.5,fill:'var(--warn)',stroke:'var(--warn-ink)'},grease)});
+const sL=layer('shoeL',5,'slideL');drawShoe(sL,shoeLpath);drawLever(sL);
+const hL=layer('holdL',6,'pop');drawHold(hL,C.x-112,C.y);
+const sR=layer('shoeR',7,'slideR');drawShoe(sR,shoeRpath);
+const hR=layer('holdR',7,'pop');drawHold(hR,C.x+112,C.y);
+const st=layer('strut',8,'fade');drawStrut(st);
+const ad=layer('adj',9,'fade');drawAdj(ad);
+const gp=layer('guide',10,'pop');drawGuide(gp);
+const rs=layer('returns',11,'fade');drawReturns(rs);
+const rotor=layer('rotor',13,'drop');const rot=el('g',{class:'rot',id:'rotSpin'},rotor);
+el('circle',{cx:C.x,cy:C.y,r:146,fill:'var(--rotor)',stroke:'var(--plate)','stroke-width':2},rot);
+for(let r=84;r<=140;r+=12)el('circle',{cx:C.x,cy:C.y,r:r,fill:'none',stroke:'var(--steel)','stroke-width':1,opacity:.6},rot);
+el('circle',{cx:C.x,cy:C.y,r:74,fill:'var(--steel)',stroke:'var(--plate)','stroke-width':2},rot);
+el('circle',{cx:C.x,cy:C.y,r:22,fill:'var(--steel2)'},rot);
+for(let i=0;i<5;i++){const [x,y]=pt(38,-90+i*72);el('circle',{cx:x,cy:y,r:5,fill:'var(--steel2)',stroke:'var(--ink)'},rot)}
+el('circle',{cx:C.x,cy:C.y-62,r:7,fill:'var(--tire)'},rot);
+
+// overlays
+let g=overlay(1); // how it works demo
+el('rect',{x:0,y:0,width:640,height:400,fill:'var(--bg)'},g);
+drawBase(g);
+const dL=el('g',{class:'demoL'},g);drawShoe(dL,shoeLpath);drawLever(dL);drawHold(dL,C.x-112,C.y);
+const dR=el('g',{class:'demoR'},g);drawShoe(dR,shoeRpath);drawHold(dR,C.x+112,C.y);
+drawStrut(g);drawAdj(g);drawGuide(g);drawReturns(g);
+el('circle',{cx:C.x,cy:C.y,r:139,fill:'none','stroke-width':6,class:'demoDrum',stroke:'var(--steel)','stroke-dasharray':'10 6'},g);
+el('path',{d:`M40 400 C 120 380, 200 330, ${C.x-78} ${C.y+52}`,fill:'none',stroke:'var(--accent)','stroke-width':5,class:'demoCable'},g);
+chip(svg,20,20,'CABLE PULLS',g);chip(svg,600,20,'SHOES PUSH OUT',g);
+el('text',{x:470,y:384,class:'lbl'},g).textContent='dashed ring = drum';
+
+g=overlay(2); // sort
+el('rect',{x:0,y:0,width:640,height:400,fill:'var(--bg)'},g);
+el('rect',{x:16,y:56,width:380,height:330,rx:8,fill:'var(--board)'},g);
+el('rect',{x:412,y:56,width:212,height:330,rx:8,fill:'none',stroke:'var(--muted)','stroke-width':2,'stroke-dasharray':'8 6'},g);
+el('text',{x:30,y:84,class:'lbl'},g).textContent='THIS SIDE';el('text',{x:428,y:84,class:'lbl'},g).textContent='BAG: PASSENGER';
+KIT.forEach(([k],i)=>{const col=i%4,row=Math.floor(i/4);const ig=el('g',{transform:`translate(${34+col*90} ${100+row*90}) scale(1.2)`,class:'pop'},g);ICON[k](ig);
+  const bg=el('g',{transform:`translate(${440+(i%2)*90} ${96+Math.floor(i/2)*56}) scale(.8)`,opacity:.55},g);ICON[k](bg)});
+chip(svg,600,16,'SPLIT IN HALF',g);
+
+g=overlay(3);const br=el('g',{class:'brush'},g);
+el('rect',{x:420,y:140,width:110,height:22,rx:5,fill:'var(--warn)',stroke:'var(--ink)','stroke-width':2,transform:'rotate(-25 475 151)'},br);
+chip(svg,600,20,'PEA-SIZE DABS',g);chip(svg,600,52,'HACK: COTTON SWAB',g,1);
+
+g=overlay(4); // bench lever install
+el('rect',{x:0,y:0,width:640,height:400,fill:'var(--bg)'},g);
+el('rect',{x:40,y:300,width:560,height:70,rx:6,fill:'var(--board)'},g);
+el('path',{d:arcBand(170,210,200,340,320,400),fill:'var(--web)',stroke:'var(--ink)','stroke-width':2},g);
+el('path',{d:arcBand(210,226,205,335,320,400),fill:'var(--lining)'},g);
+el('path',{d:'M300 130 L280 300',stroke:'var(--plate2)','stroke-width':22,'stroke-linecap':'round'},g);
+el('circle',{cx:300,cy:150,r:7,fill:'var(--steel2)',stroke:'var(--ink)'},g);
+const sh=el('g',{class:'slideIn1'},g);el('circle',{cx:340,cy:150,r:14,fill:'none',stroke:'var(--steel)','stroke-width':6},sh);
+const cw=el('g',{class:'slideIn2'},g);el('path',{d:'M392 136h-22a14 14 0 0 0 0 28h22',fill:'none',stroke:'var(--steel2)','stroke-width':7},cw);
+const pl=el('g',{class:'squeeze'},g);el('path',{d:'M470 60 L400 128',stroke:'var(--stop)','stroke-width':10,'stroke-linecap':'round'},pl);el('path',{d:'M500 90 L410 150',stroke:'var(--stop)','stroke-width':10,'stroke-linecap':'round'},pl);
+el('text',{x:34,y:40,class:'lbl'},g).textContent='1 lever pin  2 shim  3 C-washer';
+chip(svg,600,60,'CRIMP WITH PLIERS',g);
+
+g=overlay(5);chip(svg,600,20,'PEDAL UP = SLACK',g);chip(svg,600,52,'HACK: 10MM WRENCH',g,1);
+el('circle',{cx:C.x-78,cy:C.y+52,r:12,fill:'none',stroke:'var(--warn)','stroke-width':3,class:'pulse'},g);
+
+g=overlay(6);const tw=el('g',{class:'twist'},g);el('rect',{x:C.x-120,y:C.y-3,width:16,height:6,fill:'var(--stop)'},tw);
+chip(svg,600,20,'PUSH + QUARTER TURN',g);chip(svg,600,52,'HACK: DEEP SOCKET',g,1);
+el('text',{x:40,y:384,class:'lbl'},g).textContent='pin - cup - spring - cup';
+
+g=overlay(7);chip(svg,600,20,'BENT PIN GOES AROUND HUB',g);chip(svg,600,52,'HACK: LOCKING PLIERS',g,1);
+g=overlay(8);chip(svg,600,20,'LEVER PUSHES STRUT',g);chip(svg,600,52,'HACK: BINDER CLIP',g,1);
+g=overlay(9);chip(svg,600,20,'STAR WHEEL SHORT',g);chip(svg,600,52,'HACK: ANTI-SEIZE',g,1);
+g=overlay(10);chip(svg,600,20,'THREAD LOCKER ON BOLT',g);
+g=overlay(11);const str=el('g',{class:'stretch'},g);el('path',{d:`M${C.x+14} ${C.y+104} L${C.x+60} ${C.y+150}`,stroke:'var(--hack)','stroke-width':3,'stroke-dasharray':'4 3'},str);el('rect',{x:C.x+56,y:C.y+146,width:40,height:10,rx:4,fill:'var(--hack)'},str);
+chip(svg,600,20,'SAFETY GLASSES ON',g);chip(svg,600,52,'HACK: STRING LOOP',g,1);
+g=overlay(12);const jl=el('g',{class:'jig'},g);el('path',{d:`M${C.x-165} ${C.y} h-30 m10 -10 l-10 10 l10 10`,fill:'none',stroke:'var(--accent)','stroke-width':4,'stroke-linecap':'round'},jl);
+el('path',{d:`M${C.x+165} ${C.y} h30 m-10 -10 l10 10 l-10 10`,fill:'none',stroke:'var(--accent)','stroke-width':4,'stroke-linecap':'round'},jl);
+chip(svg,600,20,'MATCH THE FLIPPED PHOTO',g);
+g=overlay(13);chip(svg,600,20,'TIGHT, THEN BACK 8 CLICKS',g);chip(svg,600,52,'HACK: 2 LUG NUTS',g,1);
+g=overlay(14);el('rect',{x:0,y:0,width:640,height:400,fill:'var(--bg)'},g);
+const ped=el('g',{class:'press'},g);el('line',{x1:560,y1:230,x2:560,y2:330,stroke:'var(--ink)','stroke-width':8,'stroke-linecap':'round'},ped);el('rect',{x:536,y:326,width:48,height:18,rx:5,fill:'var(--accent)'},ped);
+el('path',{d:'M60 300 h360',stroke:'var(--muted)','stroke-width':3,'stroke-dasharray':'14 10'},g);
+el('rect',{x:80,y:250,width:110,height:40,rx:12,fill:'var(--stop)'},g);el('circle',{cx:105,cy:292,r:10,fill:'var(--tire)'},g);el('circle',{cx:165,cy:292,r:10,fill:'var(--tire)'},g);
+el('text',{x:60,y:110,class:'lbl'},g).textContent='~30 MPH';el('text',{x:60,y:140,class:'lbl'},g).textContent='LIGHT PEDAL, HOLD RELEASE';el('text',{x:60,y:170,class:'lbl'},g).textContent='~1/4 MILE, 2 TO 3 TIMES';
+chip(svg,20,20,'EMPTY LOT + GROWN-UP',g);
+
+/* ---------- steps ---------- */
+const STEPS=[
+ ["How it works","The cable pulls a lever. The lever pushes two shoes out against the inside of the drum, like hands pushing out inside a bucket. Springs pull them back when you let go.",""],
+ ["Sort the kit","The kit and shoes are for both back wheels. Split them in half. One half goes on this side. The other half goes back in the bag for the passenger side.","Hack: a muffin tin keeps every kind of part in its own cup."],
+ ["Clean and grease the plate","Brush and spray the plate clean. Put a pea-size dab of brake grease on each raised bump where the shoes slide.","Hack: a cotton swab gives the perfect dab."],
+ ["Put the lever on the shoe","The lever pin goes through the shoe. Slide on the shim, then the C-washer. Squeeze the C-washer shut with pliers.","Hack: crimp it with Channellocks or vise grips."],
+ ["Hook the cable and set the shoe","Pedal up so the cable has slack. Pull back the cable spring and hook the cable to the bottom of the lever. Set that shoe on the plate.","Hack: a 10 mm wrench slid over the cable pushes the spring back for you."],
+ ["Lock it with a hold-down","Pin from the back, then cup, spring, cup on the front. Push the top cup and turn it a quarter turn, like a medicine cap.","Hack: push and twist with a deep socket. Tape the pin head on the back."],
+ ["Second shoe and hold-down","Same on the other shoe. The bent pin is for the hole the hub blocks. It reaches around.","Hack: hold the bent pin from behind with locking pliers."],
+ ["Strut and strut spring","The flat strut goes between the lever and the other shoe, with its spring. The lever pushes this bar to spread the shoes.","Hack: a binder clip holds the spring squeezed while you place it."],
+ ["Star wheel adjuster","Screw the star wheel in short. Set the forked ends in the shoe slots. Hook the short green spring next to it.","Hack: anti-seize on the threads so it never rusts stuck."],
+ ["Guide plate on the anchor","Put the guide plate back on the anchor like the passenger side. A grown-up puts thread locker on the bolt and tightens it.",""],
+ ["Two return springs","Hook each long spring to its shoe, then stretch it onto the anchor. Safety glasses on, springs can fly.","Hack: loop a string or zip tie through the hook and pull it with a screwdriver handle."],
+ ["Wiggle test","Push each shoe. Both sit flat, move together and spring back. Check every spring against your flipped photo.","Hack: press the pedal once. Both shoes should push out and come back."],
+ ["Rotor on and adjust","Slide the rotor on. Through the hole, click the star wheel until the rotor locks, then back it off about 8 clicks.","Hack: 2 lug nuts on backward hold the rotor flat while you adjust."],
+ ["Test and break in","A grown-up drives about 30 mph and lightly presses the parking brake while holding the release, for about a quarter mile. Do it 2 or 3 times.",""]
+];
+const N=STEPS.length, DUR=7500;
+const layers=[...svg.querySelectorAll('.layer')], ovs=[...svg.querySelectorAll('.ov')];
+const capNum=document.getElementById('capNum'),capTitle=document.getElementById('capTitle'),capText=document.getElementById('capText'),capHack=document.getElementById('capHack'),bar=document.getElementById('barFill');
+const dots=document.getElementById('dots'),playBtn=document.getElementById('play'),speakBtn=document.getElementById('speak');
+STEPS.forEach((s,i)=>{const d=document.createElement('button');d.type='button';d.setAttribute('aria-label','Step '+(i+1)+': '+s[0]);d.addEventListener('click',()=>go(i,true));dots.appendChild(d)});
+let cur=0, playing=!matchMedia('(prefers-reduced-motion: reduce)').matches, t0=0, speaking=false;
+const cablePath=document.getElementById('cablePath');
+function render(i){
+  const step=i+1;
+  layers.forEach(l=>{const from=+l.dataset.from;const on=step>=from;l.classList.toggle('on',on);
+    l.classList.remove('enter','fade','slideL','slideR','drop','pop');
+    if(on&&step===from){void l.getBBox();l.classList.add('enter',l.dataset.anim)}});
+  ovs.forEach(o=>{o.classList.remove('on');if(+o.dataset.step===step){void o.getBBox();o.classList.add('on')}});
+  cablePath.setAttribute('d',step>=5?`M40 400 C 120 380, 200 330, ${C.x-78} ${C.y+52}`:'M40 400 C 100 390, 140 370, 170 360');
+  document.getElementById('rotSpin').classList.toggle('turn',step===13);
+  capNum.textContent='Step '+step+' of '+N;capTitle.textContent=STEPS[i][0];capText.textContent=STEPS[i][1];capHack.textContent=STEPS[i][2];
+  [...dots.children].forEach((d,j)=>d.classList.toggle('on',j===i));
+  if(speaking)say(i);
+}
+function go(i,user){cur=(i+N)%N;t0=performance.now();render(cur);if(user&&!playing)bar.style.width='0%'}
+function tick(now){if(playing){const p=Math.min(1,(now-t0)/DUR);bar.style.width=(p*100)+'%';if(p>=1){if(cur===N-1&&document.body.classList.contains('rec')){playing=false;window.__done=true}else go(cur+1)}}requestAnimationFrame(tick)}
+playBtn.addEventListener('click',()=>{playing=!playing;playBtn.textContent=playing?'Pause':'Play';if(playing)t0=performance.now()-(parseFloat(bar.style.width)||0)/100*DUR});
+document.getElementById('prev').addEventListener('click',()=>go(cur-1,true));
+document.getElementById('next').addEventListener('click',()=>go(cur+1,true));
+function say(i){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(STEPS[i][0]+'. '+STEPS[i][1]+' '+STEPS[i][2]);u.rate=.95;speechSynthesis.speak(u)}catch(e){}}
+speakBtn.addEventListener('click',()=>{speaking=!speaking;speakBtn.setAttribute('aria-pressed',speaking);speakBtn.textContent=speaking?'Stop reading':'Read to me';if(speaking)say(cur);else{try{speechSynthesis.cancel()}catch(e){}}});
+if(location.hash==='#rec'){document.body.classList.add('rec');playing=false;window.__start=()=>{playing=true;go(0)}}
+playBtn.textContent=playing?'Pause':'Play';
+go(0);requestAnimationFrame(tick);
+})();
+</script>
